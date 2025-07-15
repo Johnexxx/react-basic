@@ -7,25 +7,43 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { database } from '../models/database';
 import { Q } from '@nozbe/watermelondb';
-import { setToken } from '../storage/mmkv';
+import { database } from '../models/database';
+import User from '../models/User';
+import { setEmail, setToken } from '../storage/mmkv';
 
-const LoginScreen = ({ navigation, loginCallback }: any) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+interface LoginScreenProps {
+  navigation: any;
+  loginCallback: () => void;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, loginCallback }) => {
+  const [email, setEmailInput] = useState('');
+  const [password, setPasswordInput] = useState('');
 
   const onLogin = async () => {
-    const userCollection = database.get('users');
-    const user = await userCollection
-      .query(Q.where('email', email), Q.where('password', password))
-      .fetch();
+    try {
+      const userCollection = database.get<User>('users');
+      const users = await userCollection
+        .query(
+          Q.where('email', email.trim()),
+          Q.where('password', password)
+        )
+        .fetch();
 
-    if (user.length > 0) {
-      setToken('dummy-token');
-      loginCallback(); // let App.tsx know you're logged in
-    } else {
-      Alert.alert('Login Failed', 'Invalid email or password');
+      if (users.length > 0) {
+        // ✅ Store session
+        setToken('dummy-token');
+        setEmail(email.trim());
+
+        // ✅ Notify App that login succeeded
+        loginCallback();
+      } else {
+        Alert.alert('Login Failed', 'Invalid email or password');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      Alert.alert('Error', 'Something went wrong during login');
     }
   };
 
@@ -35,14 +53,15 @@ const LoginScreen = ({ navigation, loginCallback }: any) => {
 
       <TextInput
         value={email}
-        onChangeText={setEmail}
+        onChangeText={setEmailInput}
         placeholder="Email"
         style={styles.input}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
       <TextInput
         value={password}
-        onChangeText={setPassword}
+        onChangeText={setPasswordInput}
         placeholder="Password"
         secureTextEntry
         style={styles.input}
@@ -52,50 +71,52 @@ const LoginScreen = ({ navigation, loginCallback }: any) => {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
-      <Text style={styles.link} onPress={() => navigation.navigate('Signup')}>
-        Don't have an account? Sign up
-      </Text>
+      <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+        <Text style={styles.link}>Don't have an account? Sign up</Text>
+      </TouchableOpacity>
     </View>
   );
 };
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 24,
     textAlign: 'center',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    padding: 8,
-    marginBottom: 12,
-    borderRadius: 4,
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 8,
+    fontSize: 16,
   },
   button: {
     backgroundColor: '#007bff',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '600',
     fontSize: 16,
   },
   link: {
     marginTop: 20,
     color: '#007bff',
     textAlign: 'center',
+    fontSize: 14,
   },
 });
-
-export default LoginScreen;
