@@ -2,14 +2,14 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const mySchema = appSchema({
-  version: 2, // ⬅️ increment the version
+  version: 3, // ⬅️ increment version again to apply schema changes
   tables: [
     tableSchema({
       name: 'users',
       columns: [
+        { name: 'name', type: 'string' },
         { name: 'email', type: 'string' },
         { name: 'password', type: 'string' },
-        { name: 'is_logged_in', type: 'boolean' }, // ✅ new column
       ],
     }),
     tableSchema({
@@ -17,7 +17,7 @@ export const mySchema = appSchema({
       columns: [
         { name: 'title', type: 'string' },
         { name: 'body', type: 'string' },
-        { name: 'user_id', type: 'string' }, // ✅ to relate note to user
+        { name: 'user_id', type: 'string' }, // ✅ user-note relationship
       ],
     }),
   ],

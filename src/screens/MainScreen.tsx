@@ -1,29 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { getEmail, clearToken, clearEmail } from '../storage/mmkv';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootNavigator';
+
+type MainScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Main'
+>;
 
 interface MainScreenProps {
-  logoutCallback: () => void;
-  navigation: any;
+  navigation: MainScreenNavigationProp;
 }
 
-const MainScreen: React.FC<MainScreenProps> = ({ logoutCallback, navigation }) => {
-  const [email, setEmail] = useState('');
+const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
+  const [email, setEmailState] = useState('');
 
   useEffect(() => {
     const currentEmail = getEmail();
-    setEmail(currentEmail);
+    setEmailState(currentEmail);
   }, []);
 
   const logout = () => {
     clearToken();
     clearEmail();
-    logoutCallback(); // Let App.tsx switch back to login screen
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
   };
 
   return (
@@ -37,15 +41,6 @@ const MainScreen: React.FC<MainScreenProps> = ({ logoutCallback, navigation }) =
           onPress={() => navigation.navigate('Notes')}
         >
           <Text style={styles.buttonText}>Notes CRUD</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={[styles.button, styles.schemaButton]}
-          onPress={() => navigation.navigate('NoteFormScreen')}
-        >
-          <Text style={styles.buttonText}>Schema</Text>
         </TouchableOpacity>
       </View>
 
@@ -92,11 +87,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  schemaButton: {
-    backgroundColor: '#28a745',
-  },
   logoutButton: {
     backgroundColor: '#dc3545',
+    marginTop: 20,
   },
   buttonText: {
     color: '#fff',

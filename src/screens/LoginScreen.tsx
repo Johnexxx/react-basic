@@ -11,13 +11,12 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from '../models/database';
 import User from '../models/User';
 import { setEmail, setToken } from '../storage/mmkv';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/RootNavigator';
 
-interface LoginScreenProps {
-  navigation: any;
-  loginCallback: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, loginCallback }) => {
+const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmailInput] = useState('');
   const [password, setPasswordInput] = useState('');
 
@@ -25,25 +24,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, loginCallback }) 
     try {
       const userCollection = database.get<User>('users');
       const users = await userCollection
-        .query(
-          Q.where('email', email.trim()),
-          Q.where('password', password)
-        )
+        .query(Q.where('email', email.trim()), Q.where('password', password))
         .fetch();
 
       if (users.length > 0) {
-        // ✅ Store session
         setToken('dummy-token');
         setEmail(email.trim());
 
-        // ✅ Notify App that login succeeded
-        loginCallback();
+        // Reset to Main screen directly
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        });
       } else {
-        Alert.alert('Login Failed', 'Invalid email or password');
+        Alert.alert('Login failed', 'Invalid credentials');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      Alert.alert('Error', 'Something went wrong during login');
+    } catch (err: any) {
+      Alert.alert('Login error', err.message || 'Something went wrong');
     }
   };
 
@@ -59,6 +56,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, loginCallback }) 
         autoCapitalize="none"
         keyboardType="email-address"
       />
+
       <TextInput
         value={password}
         onChangeText={setPasswordInput}
